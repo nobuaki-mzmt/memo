@@ -1,0 +1,40 @@
+Mathematica
+
+(* x‚É‚Â‚¢‚Ä”÷•ª *)
+D[(x-1)/(a^(1-x)-b^(1-x)), x]	
+D[C*e^(-a*x^b), x]	
+
+(* x‚É‚Â‚¢‚Ä“WŠJ *)
+Solve[1/(a^(1-x)-b^(1-x)) = 0, x]	
+
+(* x‚É‚Â‚¢‚Ä•s’èÏ•ª *)
+Integrate[Cx^(b-1)*e^(-a*x^b), x]
+
+(* {0,k}‚Ì”ÍˆÍ‚Åx‚É‚Â‚¢‚Ä’èÏ•ª *)
+Integrate[C*x^(b-1)*e^(-a*x^b), {x, 0, k}]
+Integrate[x+5, {x, 0, k}]
+
+(x-60)^2/20^2 + (y-20)^2/30^2 = 
+
+NDSolve[{S'[t] == a*U[t] - b*S[t]*U[t], U'[t] == b*S[t]*U[t] - a*U[t],
+	S[0] == 0.99, U[0] == 0.01},
+	{S,U}, {t,0,100}]
+
+
+NDSolve[{S'[t] == U[t] - S[t]*U[t], U'[t] == S[t]*U[t] - U[t],
+	S[0] == 0.99, U[0] == 0.01},
+	{S,U}, {t,0,100}]
+
+f[x_, y_] := Which[x < y, 0, x > y, 1 - y/x, True, 0]
+
+Plot3D[f[y, x], {x, 0, 1}, {y, 0, 1}]
+
+Plot3D[f[y, x], {x, 0, 1}, {y, 0, 1},
+	PlotPoints -> 100,
+    PlotRange -> All,
+    ImageSize -> 800,
+    AxesLabel -> {"","",""},
+    AxesStyle -> 40,
+    Boxed -> True,
+    TicksStyle -> 20,
+    PlotTheme -> "Classic"]

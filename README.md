@@ -1,7 +1,7 @@
 # memo
 Several examples of coding.
 
-1. cmd
-2. R
-3. Python
-4. Mathemetica
+1. [cmd](./cmd.cmd)
+2. [R](./Rtips.r)
+3. [Python](./python.py)
+4. [Mathemetica](./Mathematica.txt)

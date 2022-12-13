@@ -38,18 +38,17 @@ rem 		take one snapshot
 rem 3.	-q:v 1
 rem 		quality range of the image. range 1-31. 1 is the best.
 
-
 rem ---- connect videos ----
 ffmpeg -safe 0 -f concat -i connect.txt -c:v libx264 -b:v 400k -threads 4 -s 1280x720 test2.mp4
 rem connect.txt include file lists that you want to connect
 
 
+rem ----------------- Imagemagiks -----------------
+rem -- create gif animation
+convert -delay 10 -loop 0 *.jpg movie.gif
+rem -delay 10:  time interval (1/100 sec)
 
 
-
-
-
-rem ------ Imagemagiks -----
 rem -- Šg’£Žq‚Ì•ÏŠ·
 convert *.emf res_Levy_%03d.png
 
@@ -57,12 +56,6 @@ rem -- —]”’‚ÌƒgƒŠƒ~ƒ“ƒO
 convert *.png -trim +repage trim_%03d.png
 rem -- or
 mogrify -trim +repage *.png
-
-rem -- gifì¬ (delay1.5‚ªÅ‘¬H)
-convert -delay 1.5 -loop 1 *.png movie.gif
-convert -delay 1.5 -loop 0 bin*.png bin_movie.gif
-convert -delay 30 -loop 0 *.jpg movie.gif
-rem -- -loop: loop‚·‚é‰ñ”, 0‚¾‚Æ–³ŒÀ
 
 convert -delay 4 -loop 1 *.png movie.gif
 convert -delay 1.5 -loop 0 *.png movie2.gif

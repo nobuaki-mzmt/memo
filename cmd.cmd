@@ -44,8 +44,11 @@ rem connect.txt include file lists that you want to connect
 
 
 rem ----------------- Imagemagiks -----------------
+rem -- check if installed
+where magick
+
 rem -- create gif animation
-convert -delay 10 -loop 0 *.jpg movie.gif
+magick convert -delay 10 -loop 0 *.jpg movie.gif
 rem -delay 10:  time interval (1/100 sec)
 
 

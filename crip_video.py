@@ -226,7 +226,7 @@ while True:
             if len(values["-offset-"]) == 0:
                 offset = 0
             else:
-                et = int(values["-offset-"])
+                offset = int(values["-offset-"])
 
             if len(values["-vlength-"]) == 0:
                 vlength = -1
@@ -238,4 +238,3 @@ while True:
             ImageAnalysis(idir, odir, scale, shape, fwidth, vlength, offset)
 
 window.close()
-

@@ -152,16 +152,17 @@ def ImageAnalysis(idir, odir, scale, cropping, shape, fwidth, v_len, offset):
         if fwidth > 0:
             writer = cv2.VideoWriter(v2.replace(idir, odir), fourcc, fps, (fwidth, fwidth))
             video = cv2.VideoCapture(v)
-            for t in tqdm.tqdm(range(offset, int(offset+video_length))):
+            for t in tqdm.tqdm(range(int(video_length))):
                 ret, frame = video.read()
-                frame_trim = frame.copy()
-                frame_trim = frame_trim[y0:y1, x0:x1]
-                frame_resize = cv2.resize(frame_trim, (fwidth, fwidth))
-                writer.write(frame_resize)
+                if t > offset:
+                    frame_trim = frame.copy()
+                    frame_trim = frame_trim[y0:y1, x0:x1]
+                    frame_resize = cv2.resize(frame_trim, (fwidth, fwidth))
+                    writer.write(frame_resize)
         else:
             writer = cv2.VideoWriter(v2.replace(idir, odir), fourcc, fps, (y1-y0, y1-y0))
             video = cv2.VideoCapture(v)
-            for t in tqdm.tqdm(range(int(offset+video_length))):
+            for t in tqdm.tqdm(range(int(video_length))):
                 ret, frame = video.read()
                 if t > offset:
                     frame_trim = frame.copy()

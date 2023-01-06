@@ -23,7 +23,12 @@ rem ---- trimming ----
 ffmpeg -ss 20 -i input.mp4 -t3600 output.mp4
 
 rem ---- multiple files ----
+:: Mac
 for f in *.MP4; do ffmpeg -ss 20 -i "$f" -t 3600 -c:v h264_nvenc -b:v 1000k -s 1920x1080 %%i-small.mp4; done
+:: Windows
+for /r %f in (*.mp4) do ffmpeg -ss 20 -i "$f" -t 3600 -c:v h264_nvenc -b:v 1000k -s 1920x1080 %%i-small.mp4
+:: When running a for loop directly in cmd, need to use % instead of %% as the loop variable.
+:: This is because the %% symbol is used to escape variables in batch files, but is not necessary when running a loop directly in cmd.
 
 rem ---- speed change ----
 ffmpeg -i input.mp4 -vf setpts=PTS/3.0 -af atempo=2.0 outputx2.mp4

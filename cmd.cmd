@@ -47,6 +47,9 @@ rem ---- connect videos ----
 ffmpeg -safe 0 -f concat -i connect.txt -c:v libx264 -b:v 400k -threads 4 -s 1280x720 test2.mp4
 rem connect.txt include file lists that you want to connect
 
+rem ---- create gif from movie ----
+ffmpeg -i input.mp4 -vf scale=320:-1 -r 10 output.gif
+
 
 rem ----------------- Imagemagiks -----------------
 rem -- check if installed

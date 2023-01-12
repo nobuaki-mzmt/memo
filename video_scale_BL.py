@@ -73,15 +73,15 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
                         'frame number: ' + str(frame_id),
                         (10, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2, cv2.LINE_AA)
             cv2.putText(frame_copy,
-                        'Use this frame? Yes -> L click, No -> R click',
+                        'Use this frame?',
                         (10, 100), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2, cv2.LINE_AA)
             cv2.imshow('window', frame_copy)
             cv2.setMouseCallback('window', frame_check)
             k = cv2.waitKey(0)
-            if k == ord("l"):
+            if k == ord("r"):
                 img = frame.copy()
                 break
-            elif k == ord("r"):
+            elif k == ord("l"):
                 frame_id   = frame_id + 3000
                 if frame_id > count:
                     print("End of frames. Maybe reduce frame_interval to sample more frames.")
@@ -97,6 +97,7 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
         if measure_scale == "True":
             sx0, sy0 = 0, 0
             sx1, sy1 = 0, 0
+            drawing = False
 
             if shape == "circle":
                 def scale_draw(event, x, y, flags, param):
@@ -149,9 +150,7 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
                 cv2.imshow('window', img_copy)
                 if drawing:
                     img_copy = img.copy()
-                cv2.putText(img_copy, 'Scaling. L DOWN -> L UP. R click to finish', (10, 50), cv2.FONT_HERSHEY_PLAIN, 2,
-                            (0, 0, 255),
-                            2, cv2.LINE_AA)
+                cv2.putText(img_copy, 'Scaling', (10, 50), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 1, cv2.LINE_AA)
                 cv2.setMouseCallback('window', scale_draw)
                 if cv2.waitKey(1) & end == 1:
                     break
@@ -168,18 +167,18 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
         cv2.putText(img_copy, 'Body Length', (10, 50), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 1, cv2.LINE_AA)
         body_length = [0] * num_ind
         bl_data = []
-        for ii in range(num_ind):
-            # todo: code for zooming is not great. but I have no idea how to improve yet.
-            end, mouse_xy = 0, np.array([0, 0])
-            zoom, zoom_xy = [1, 1, 1], [np.array([0, 0]), np.array([0, 0]), np.array([0, 0])]  # for x2, x4, x8
 
+        # todo: code for zooming is not great. but I have no idea how to improve yet.
+        zoom, zoom_xy = [1, 1, 1], [np.array([0, 0]), np.array([0, 0]), np.array([0, 0])]  # for x2, x4, x8
+        mouse_xy = np.array([0, 0])
+
+        for ii in range(num_ind):
+            current_bl = [[0, 0], [0, 0]]
+            bl = 0
             while True:
                 cv2.imshow('window', img_copy)
-                current_bl = [[0, 0], [0, 0]]
-                bl = 0
-
                 def bl_draw(event, x, y, flags, param):
-                    nonlocal bl_data, ii, img, img_copy, current_bl, end, mouse_xy, zoom, zoom_xy, bl
+                    nonlocal bl_data, ii, img, img_copy, current_bl, mouse_xy, zoom, zoom_xy, bl
 
                     if event == cv2.EVENT_MOUSEMOVE:
                         mouse_xy = np.array([x, y])
@@ -191,13 +190,14 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
                     if event == cv2.EVENT_LBUTTONUP:
                         current_bl[1] = (((np.array([x, y])+zoom_xy[2])/zoom[2]+zoom_xy[1])/zoom[1]+zoom_xy[0])/zoom[0]
                         current_bl[1] = current_bl[1].astype(int)
-                        print(current_bl[0])
-                        print(current_bl[1])
+                        cv2.line(img_copy, 
+                            ((current_bl[0]*zoom[0]-zoom_xy[0])*zoom[1]-zoom_xy[1])*zoom[2]-zoom_xy[2],
+                            ((current_bl[1]*zoom[0]-zoom_xy[0])*zoom[1]-zoom_xy[1])*zoom[2]-zoom_xy[2], (0, 255, 255), 2)
+                        bl = norm(current_bl[1] - current_bl[0])
+                    if event == cv2.EVENT_RBUTTONDOWN:
                         cv2.line(img_copy, 
                             ((current_bl[0]*zoom[0]-zoom_xy[0])*zoom[1]-zoom_xy[1])*zoom[2]-zoom_xy[2],
                             ((current_bl[1]*zoom[0]-zoom_xy[0])*zoom[1]-zoom_xy[1])*zoom[2]-zoom_xy[2], (0, 0, 255), 2)
-                        bl = norm(current_bl[1] - current_bl[0])
-                    if event == cv2.EVENT_RBUTTONDOWN:
                         press("r")
                     cv2.imshow('window', img_copy)
 
@@ -252,9 +252,9 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
 
 
         # region ----- 4. Output -----#
-        df.iloc[i:(i+1), 0:7] = [name, width, height, count, fps, frame_id, scale,]
+        df.iloc[i:(i+1), 0:7] = [name, width, height, count, fps, frame_id, scale/img_scale,]
         for ii in range(num_ind):
-            df.iloc[i:(i+1), 7+ii] = body_length[ii]
+            df.iloc[i:(i+1), 7+ii] = body_length[ii]/img_scale
         cv2.putText(img_output, name, (10, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2, cv2.LINE_AA)
         cv2.imwrite(odir + os.sep + name + ".jpg", img_output)
 

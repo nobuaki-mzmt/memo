@@ -18,6 +18,8 @@ from keyboard import press
 import os
 import math
 import pandas as pd
+import pickle
+from numpy.linalg import norm
 
 
 # ---------------------------------------------------------------------------------------------
@@ -50,9 +52,11 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
         count = video.get(cv2.CAP_PROP_FRAME_COUNT)
         fps = video.get(cv2.CAP_PROP_FPS)
         print("name:{}, width:{}, height:{}, count:{}, fps:{}".format(name, width, height, count, fps))
+        img_shape = np.array([int(width), int(height)])
         # ----------
 
         # region ----- 1. Extract frame -----
+        img = None
         def frame_check(event, x, y, flags, param):
             if event == cv2.EVENT_LBUTTONDOWN:
                 press('l')
@@ -93,47 +97,50 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
         if measure_scale == "True":
             sx0, sy0 = 0, 0
             sx1, sy1 = 0, 0
-            def line_scale(event, x, y, flags, param):
-                nonlocal sx0, sy0, sx1, sy1, scale, drawing, end
-                if event == cv2.EVENT_LBUTTONDOWN:
-                    drawing = True
-                    sx0, sy0 = x, y
-                elif event == cv2.EVENT_MOUSEMOVE:
-                    if drawing:
-                        cv2.line(img_copy, (sx0, sy0), (x, y), (0, 0, 255), 1)
-                elif event == cv2.EVENT_LBUTTONUP:
-                    sx1, sy1 = x, y
-                    cv2.line(img_copy, (sx0, sy0), (sx1, sy1), (0, 0, 255), 1)
-                    drawing = False
-                if event == cv2.EVENT_RBUTTONDOWN:
-                    end = 1
-                press('enter')
 
-            def circle_scale(event, x, y, flags, param):
-                nonlocal sx0, sy0, sx1, sy1, scale, drawing, end, img_output
-                if event == cv2.EVENT_LBUTTONDOWN:
-                    drawing = True
-                    sx0, sy0 = x, y
-                elif event == cv2.EVENT_MOUSEMOVE:
-                    if drawing:
+            if shape == "circle":
+                def scale_draw(event, x, y, flags, param):
+                    nonlocal sx0, sy0, scale, drawing, end, img_output
+                    if event == cv2.EVENT_LBUTTONDOWN:
+                        drawing = True
+                        sx0, sy0 = x, y
+                    elif event == cv2.EVENT_MOUSEMOVE:
+                        if drawing:
+                            cv2.circle(img_copy, center=(int((x - sx0) / 2) + sx0, int((y - sy0) / 2) + sy0),
+                                       radius=int(math.sqrt((sx0 - x) ** 2 + (sy0 - y) ** 2) / 2),
+                                       color=(0, 0, 255), thickness=1)
+                    elif event == cv2.EVENT_LBUTTONUP:
+                        scale = math.sqrt((sx0 - x) ** 2 + (sy0 - y) ** 2)
                         cv2.circle(img_copy, center=(int((x - sx0) / 2) + sx0, int((y - sy0) / 2) + sy0),
-                                   radius=int(math.sqrt((sx0 - x) ** 2 + (sy0 - y) ** 2) / 2),
+                                   radius=int(scale / 2),
                                    color=(0, 0, 255), thickness=1)
-                elif event == cv2.EVENT_LBUTTONUP:
-                    scale = math.sqrt((sx0 - x) ** 2 + (sy0 - y) ** 2)
-                    cv2.circle(img_copy, center=(int((x - sx0) / 2) + sx0, int((y - sy0) / 2) + sy0),
-                               radius=int(scale / 2),
-                               color=(0, 0, 255), thickness=1)
-                    cv2.circle(img_output, center=(int((x - sx0) / 2) + sx0, int((y - sy0) / 2) + sy0),
-                               radius=int(scale / 2),
-                               color=(0, 0, 255), thickness=1)
+                        cv2.circle(img_output, center=(int((x - sx0) / 2) + sx0, int((y - sy0) / 2) + sy0),
+                                   radius=int(scale / 2),
+                                   color=(0, 0, 255), thickness=1)
 
-                    drawing = False
-                if event == cv2.EVENT_RBUTTONDOWN:
-                    end = 1
-                press('enter')
+                        drawing = False
+                    if event == cv2.EVENT_RBUTTONDOWN:
+                        end = 1
+                    press('enter')
 
-            img = frame
+            elif shape == "line":
+                def scale_draw(event, x, y, flags, param):
+                    nonlocal sx0, sy0, scale, drawing, end, img_output
+                    if event == cv2.EVENT_LBUTTONDOWN:
+                        drawing = True
+                        sx0, sy0 = x, y
+                    elif event == cv2.EVENT_MOUSEMOVE:
+                        if drawing:
+                            cv2.line(img_copy, (sx0, sy0), (x, y), (0, 0, 255), 1)
+                    elif event == cv2.EVENT_LBUTTONUP:
+                        cv2.line(img_copy, (sx0, sy0), (x, y), (0, 0, 255), 1)
+                        cv2.line(img_output, (sx0, sy0), (x, y), (0, 0, 255), 1)
+                        drawing = False
+                        scale = math.sqrt((sx0 - x) ** 2 + (sy0 - y) ** 2)
+                    if event == cv2.EVENT_RBUTTONDOWN:
+                        end = 1
+
+
             img_copy = img.copy()
             img_output = img.copy()
             end = 0
@@ -142,70 +149,123 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
                 cv2.imshow('window', img_copy)
                 if drawing:
                     img_copy = img.copy()
-                cv2.putText(img_copy, 'Circle scaling. L DOWN -> L UP. R click to finish', (10, 50), cv2.FONT_HERSHEY_PLAIN, 2,
+                cv2.putText(img_copy, 'Scaling. L DOWN -> L UP. R click to finish', (10, 50), cv2.FONT_HERSHEY_PLAIN, 2,
                             (0, 0, 255),
                             2, cv2.LINE_AA)
-                cv2.setMouseCallback('window', circle_scale)
-                if cv2.waitKey(0) & end == 1:
+                cv2.setMouseCallback('window', scale_draw)
+                if cv2.waitKey(1) & end == 1:
                     break
+        
         else:
-            scale = width
+            scale = 0
         # endregion
 
         drawing = False
         img_output = img.copy()
-        # region ----- 3. Body length -----
-        def obtainBodyLength(event, x, y, flags, param):
-            nonlocal sx0, sy0, bl, drawing, end, img_output
-            if event == cv2.EVENT_LBUTTONDOWN:
-                drawing = True
-                sx0, sy0 = x, y
-            elif event == cv2.EVENT_MOUSEMOVE:
-                if drawing:
-                    cv2.line(img_copy, (sx0, sy0), (x, y), (0, 0, 255), 1)
-            elif event == cv2.EVENT_LBUTTONUP:
-                cv2.line(img_copy, (sx0, sy0), (x, y), (0, 0, 255), 1)
-                cv2.line(img_output, (sx0, sy0), (x, y), (0, 0, 255), 1)
-                bl = math.sqrt((x-sx0)**2 + (y-sy0)**2)
-                drawing = False
-            if event == cv2.EVENT_RBUTTONDOWN:
-                end = 1
-            press('enter')
 
+        # region --- 3.  Measure body length --- #
+        img_copy = img.copy()
+        cv2.putText(img_copy, 'Body Length', (10, 50), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 1, cv2.LINE_AA)
         body_length = [0] * num_ind
+        bl_data = []
         for ii in range(num_ind):
-            bl, end = 0, 0
-            img_copy = img.copy()
+            # todo: code for zooming is not great. but I have no idea how to improve yet.
+            end, mouse_xy = 0, np.array([0, 0])
+            zoom, zoom_xy = [1, 1, 1], [np.array([0, 0]), np.array([0, 0]), np.array([0, 0])]  # for x2, x4, x8
+
             while True:
                 cv2.imshow('window', img_copy)
-                if drawing:
+                current_bl = [[0, 0], [0, 0]]
+                bl = 0
+
+                def bl_draw(event, x, y, flags, param):
+                    nonlocal bl_data, ii, img, img_copy, current_bl, end, mouse_xy, zoom, zoom_xy, bl
+
+                    if event == cv2.EVENT_MOUSEMOVE:
+                        mouse_xy = np.array([x, y])
+
+                    if event == cv2.EVENT_LBUTTONDOWN:
+                        current_bl[0] = (((np.array([x, y])+zoom_xy[2])/zoom[2]+zoom_xy[1])/zoom[1]+zoom_xy[0])/zoom[0]
+                        current_bl[0] = current_bl[0].astype(int)
+
+                    if event == cv2.EVENT_LBUTTONUP:
+                        current_bl[1] = (((np.array([x, y])+zoom_xy[2])/zoom[2]+zoom_xy[1])/zoom[1]+zoom_xy[0])/zoom[0]
+                        current_bl[1] = current_bl[1].astype(int)
+                        print(current_bl[0])
+                        print(current_bl[1])
+                        cv2.line(img_copy, 
+                            ((current_bl[0]*zoom[0]-zoom_xy[0])*zoom[1]-zoom_xy[1])*zoom[2]-zoom_xy[2],
+                            ((current_bl[1]*zoom[0]-zoom_xy[0])*zoom[1]-zoom_xy[1])*zoom[2]-zoom_xy[2], (0, 0, 255), 2)
+                        bl = norm(current_bl[1] - current_bl[0])
+                    if event == cv2.EVENT_RBUTTONDOWN:
+                        press("r")
+                    cv2.imshow('window', img_copy)
+
+                cv2.setMouseCallback('window', bl_draw)
+                k = cv2.waitKey(0)
+
+                def zoom_func(img_z, mouse_xy, img_shape, zoom):
+                    mouse_xy[0] = max(mouse_xy[0], img_shape[0] / 4)
+                    mouse_xy[1] = max(mouse_xy[1], img_shape[1] / 4)
+                    mouse_xy[0] = min(mouse_xy[0], img_shape[0] * 3 / 4)
+                    mouse_xy[1] = min(mouse_xy[1], img_shape[1] * 3 / 4)
+                    img_zoom = cv2.resize(img_z, dsize=(img_shape * 2))
+                    img_zoom = img_zoom[int(mouse_xy[1] * 2 - img_shape[1] / 2):int(mouse_xy[1] * 2 + img_shape[1] / 2),
+                               int(mouse_xy[0] * 2 - img_shape[0] / 2):int(mouse_xy[0] * 2 + img_shape[0] / 2)]
+                    zoom_xy = mouse_xy * 2 - img_shape / 2
+                    zoom_xy = zoom_xy.astype(int)
+                    return img_zoom, zoom_xy, zoom*2
+
+                if k == ord("z"):
+                    if zoom[1] == 2 and zoom[2] == 1:
+                        img_copy, zoom_xy[2], zoom[2] = zoom_func(img_copy, mouse_xy, img_shape, zoom[2])
+                    elif zoom[0] == 2 and zoom[1] == 1:
+                        img_copy, zoom_xy[1], zoom[1] = zoom_func(img_copy, mouse_xy, img_shape, zoom[1])
+                    elif zoom[0] == 1:
+                        img_copy, zoom_xy[0], zoom[0] = zoom_func(img_copy, mouse_xy, img_shape, zoom[0])
+                
+                if k == ord("x"):
+                    # cancel zoom when redo
                     img_copy = img.copy()
-                cv2.putText(img_copy, 'Body Length. L DOWN -> L UP. R click to finish', (10, 50), cv2.FONT_HERSHEY_PLAIN,
-                            2,
-                            (0, 0, 255),
-                            2, cv2.LINE_AA)
-                cv2.setMouseCallback('window', obtainBodyLength)
-                if cv2.waitKey(0) & end == 1:
+                    if ii > 0:
+                        for i in range(ii-1):
+                            cv2.line(img_copy, 
+                                ((bl_data[ii][0]*zoom[0]-zoom_xy[0])*zoom[1]-zoom_xy[1])*zoom[2]-zoom_xy[2],
+                                ((bl_data[ii][1]*zoom[0]-zoom_xy[0])*zoom[1]-zoom_xy[1])*zoom[2]-zoom_xy[2], (0, 0, 255), 2)
+                        
+                    zoom, zoom_xy = [1, 1, 1], [np.array([0, 0]), np.array([0, 0]), np.array([0, 0])]
+
+                if k == ord("r"):
+                    bl_data.append(current_bl)
+                    body_length[ii] = bl
                     break
-            img = img_copy
-            body_length[ii] = bl/img_scale
+
+                if k == 27:
+                    break
+            if k == 27:
+                break
+        if k == 27:
+            break
+
         # endregion
+
+
 
         # region ----- 4. Output -----#
         df.iloc[i:(i+1), 0:7] = [name, width, height, count, fps, frame_id, scale,]
         for ii in range(num_ind):
             df.iloc[i:(i+1), 7+ii] = body_length[ii]
         cv2.putText(img_output, name, (10, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2, cv2.LINE_AA)
-        cv2.imwrite(odir + "/" + name + ".jpg", img_output)
+        cv2.imwrite(odir + os.sep + name + ".jpg", img_output)
 
     cv2.destroyAllWindows()
 
     print(df)
 
-    with open(odir + '/res.pickle', mode='wb') as f:
+    with open(odir + os.sep + 'res.pickle', mode='wb') as f:
         pickle.dump(df, f)
 
-    df.to_csv(odir + '/res.csv')
+    df.to_csv(odir + os.sep + '/res.csv')
 
 
 # ---------------------------------------------------------------------------------------------
@@ -222,14 +282,14 @@ frame1 = sg.Frame('', [
      sg.FolderBrowse(button_text='select', size=(8, 1), key="-OUTFOLDERNAME-"),
      sg.Text("(* will be created if not specified)")
      ],
-     [sg.Text("Scale (default = 0.5)"),
+     [sg.Text("Display img relative size (default = 0.5)"),
      sg.In(key='-scale-')],
-     [sg.Text("crop select shape"),
-     sg.Combo(['circle', 'square'], default_value="circle", size=(4, 1), key="-shape")
-     ],
-     [sg.Text("measure_scale"),
+     [sg.Text("Measure scale"),
      sg.Combo(['True', 'False'], default_value="True", size=(4, 1), key="-measure_scale")
      ],     
+     [sg.Text("Methods"),
+     sg.Combo(['circle', 'line'], default_value="circle", size=(4, 1), key="-shape")
+     ],
      [sg.Text("Num of individual (default = 2)"),
      sg.In(key='-NUMIND-')],
      [sg.Text("Sample frame interval (default = 3000)"),

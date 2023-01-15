@@ -82,7 +82,7 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
                 img = frame.copy()
                 break
             elif k == ord("l"):
-                frame_id   = frame_id + 3000
+                frame_id   = frame_id + frame_interval
                 if frame_id > count:
                     print("End of frames. Maybe reduce frame_interval to sample more frames.")
                     frame_id = 0
@@ -101,7 +101,7 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
 
             if shape == "circle":
                 def scale_draw(event, x, y, flags, param):
-                    nonlocal sx0, sy0, scale, drawing, end, img_output
+                    nonlocal sx0, sy0, scale, drawing, end, img_output, img_copy
                     if event == cv2.EVENT_LBUTTONDOWN:
                         drawing = True
                         sx0, sy0 = x, y
@@ -146,14 +146,19 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
             img_output = img.copy()
             end = 0
             drawing = False
+            cv2.putText(img_copy, 'Scaling', (10, 50), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 1, cv2.LINE_AA)
             while True:
                 cv2.imshow('window', img_copy)
                 if drawing:
                     img_copy = img.copy()
-                cv2.putText(img_copy, 'Scaling', (10, 50), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 1, cv2.LINE_AA)
                 cv2.setMouseCallback('window', scale_draw)
-                if cv2.waitKey(1) & end == 1:
+                k = cv2.waitKey(0)
+                if end == 1:
                     break
+                if k == 27:
+                    break
+            if k == 27:
+                break
         
         else:
             scale = 0

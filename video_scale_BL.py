@@ -82,7 +82,7 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
                 img = frame.copy()
                 break
             elif k == ord("l"):
-                frame_id   = frame_id + 3000
+                frame_id   = frame_id + frame_interval
                 if frame_id > count:
                     print("End of frames. Maybe reduce frame_interval to sample more frames.")
                     frame_id = 0

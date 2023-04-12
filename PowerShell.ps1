@@ -1,5 +1,6 @@
-# rename files in a current directory
+#------- rename files in a current directory -------#
 
+# 1. simple replacing
 Get-ChildItem -Filter *.analysis.h5 | Rename-Item -NewName { $_.Name -replace '\.mp4\.predictions\.000_', '.' -replace '\.analysis', '' }
 
 # According to ChatGPT
@@ -13,3 +14,13 @@ Get-ChildItem -Filter *.analysis.h5 | Rename-Item -NewName { $_.Name -replace '\
 # "Gly-sat-327-2.mp4.predictions.000_Gly-sat-327-2.analysis.h5" -> "Gly-sat-327-2.h5"
 
 Get-ChildItem -Filter *.h5 | Rename-Item -NewName { $_.Name -replace '.*\.G', 'G' }
+
+# 2. complicated
+
+$oldNames = Get-Content "H:\Ret_Comp_Tandem\R-ama\old.txt"
+$newNames = Get-Content "H:\Ret_Comp_Tandem\R-ama\new.txt"
+
+for ($i = 0; $i -lt $oldNames.Length; $i++) {
+    Rename-Item -Path $oldNames[$i] -NewName $newNames[$i]
+}
+

@@ -2,6 +2,7 @@
 
 # 1. simple replacing
 Get-ChildItem -Filter *.analysis.h5 | Rename-Item -NewName { $_.Name -replace '\.mp4\.predictions\.000_', '.' -replace '\.analysis', '' }
+Get-ChildItem -Filter *.new.mp4 | Rename-Item -NewName { $_.Name -replace '.new.mp4', '.mp4'}
 
 # According to ChatGPT
 # 'Get-ChildItem' cmdlet to get all the files in the current directory that match the *.analysis.h5 filter. 

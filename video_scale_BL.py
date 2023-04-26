@@ -4,6 +4,13 @@ videoScaleBL.py
 N. Mizumoto
 """
 
+"""
+TODO
+1. skip option
+2. 続きから始める
+3. overlay lines on the output images
+"""
+
 
 # ---------------------------------------------------------------------------------------------
 # packages

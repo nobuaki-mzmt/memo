@@ -4,14 +4,6 @@ videoScaleBL.py
 N. Mizumoto
 """
 
-"""
-TODO
-1. skip option
-2. 続きから始める
-3. overlay lines on the output images
-"""
-
-
 # ---------------------------------------------------------------------------------------------
 # packages
 # ---------------------------------------------------------------------------------------------
@@ -32,20 +24,31 @@ from numpy.linalg import norm
 # ---------------------------------------------------------------------------------------------
 # Main part of video analysis
 # ---------------------------------------------------------------------------------------------
-def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_interval):
+def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_interval, skip_analyzed):
 
     # Loading data
     path = glob.glob(idir + os.sep + "*.mp4")
     file_nums = list(range((len(path))))
 
     # Dataframe
-    df_column = ["name", "width", "height", "length", "fps", "frame", "scale"]
-    for i in range(num_ind):
-        df_column.append("bodyLength" + str(i))
-    df = pd.DataFrame(np.arange(len(path)*(7+num_ind)). reshape(len(path), 7+num_ind),
-                      columns=df_column)
+    if os.path.exists(odir + "/res.pickle"):
+        print("existing analysis loaded")
+        with open(odir+ os.sep  + 'res.pickle', mode='rb') as f:
+            df = pickle.load(f)
+    else:
+        df_column = ["name", "width", "height", "length", "fps", "frame", "scale"]
+        for i in range(num_ind):
+            df_column.append("bodyLength" + str(i))
+        df = pd.DataFrame(np.arange(len(path)*(7+num_ind)). reshape(len(path), 7+num_ind),
+                          columns=df_column)
 
     # ------------------ main ------------------
+    def frame_check(event, x, y, flags, param):
+            if event == cv2.EVENT_LBUTTONDOWN:
+                press('l')
+            if event == cv2.EVENT_RBUTTONDOWN:
+                press('r')
+
     for i in file_nums:
         cv2.namedWindow(winname='window')
 
@@ -53,6 +56,20 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
         v = path[i]
         file_name = os.path.basename(v)
         name = file_name.split('.')[0]
+        if df.iloc[i, 0] == name:
+            if skip_analyzed == "true":
+                continue
+            img_read = cv2.imread(odir + name + ".jpg")
+            cv2.putText(img_read, 'Skip? R:yes, L:No',
+                        (10, 100), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2, cv2.LINE_AA)
+            cv2.imshow('window', img_read)
+            cv2.setMouseCallback('window', frame_check)
+            k = cv2.waitKey(0)
+            if k == 27:
+                break
+            if k == ord("r"):
+                continue
+
         video = cv2.VideoCapture(v)
         width = video.get(cv2.CAP_PROP_FRAME_WIDTH)
         height = video.get(cv2.CAP_PROP_FRAME_HEIGHT)
@@ -64,23 +81,16 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
 
         # region ----- 1. Extract frame -----
         img = None
-        def frame_check(event, x, y, flags, param):
-            if event == cv2.EVENT_LBUTTONDOWN:
-                press('l')
-            if event == cv2.EVENT_RBUTTONDOWN:
-                press('r')
-
         frame_id = 0
+
         while True:
             video.set(cv2.CAP_PROP_POS_FRAMES, frame_id)
             ret, frame = video.read()
             frame = cv2.resize(frame, dsize=None, fx=img_scale, fy=img_scale)
             frame_copy = frame.copy()
-            cv2.putText(frame_copy,
-                        'frame number: ' + str(frame_id),
+            cv2.putText(frame_copy, 'file: ' + name + '  frame: ' + str(frame_id),
                         (10, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2, cv2.LINE_AA)
-            cv2.putText(frame_copy,
-                        'Use this frame?',
+            cv2.putText(frame_copy, 'Use this frame? R:yes, L:No',
                         (10, 100), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2, cv2.LINE_AA)
             cv2.imshow('window', frame_copy)
             cv2.setMouseCallback('window', frame_check)
@@ -99,6 +109,8 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
         if k == 27:
             break
         # endregion ----------
+
+        img_output = img.copy()
 
         # region ----- 2. Scale -----
         if measure_scale == "True":
@@ -150,7 +162,6 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
 
 
             img_copy = img.copy()
-            img_output = img.copy()
             end = 0
             drawing = False
             cv2.putText(img_copy, 'Scaling', (10, 50), cv2.FONT_HERSHEY_PLAIN, 1, (0, 0, 255), 1, cv2.LINE_AA)
@@ -172,7 +183,6 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
         # endregion
 
         drawing = False
-        img_output = img.copy()
 
         # region --- 3.  Measure body length --- #
         img_copy = img.copy()
@@ -210,6 +220,8 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
                         cv2.line(img_copy, 
                             ((current_bl[0]*zoom[0]-zoom_xy[0])*zoom[1]-zoom_xy[1])*zoom[2]-zoom_xy[2],
                             ((current_bl[1]*zoom[0]-zoom_xy[0])*zoom[1]-zoom_xy[1])*zoom[2]-zoom_xy[2], (0, 0, 255), 2)
+                        cv2.line(img_output, current_bl[0], current_bl[1], (0, 0, 255), 2)
+                        
                         press("r")
                     cv2.imshow('window', img_copy)
 
@@ -305,7 +317,9 @@ frame1 = sg.Frame('', [
      [sg.Text("Num of individual (default = 2)"),
      sg.In(key='-NUMIND-')],
      [sg.Text("Sample frame interval (default = 3000)"),
-     sg.In(key='-FRAMEINTERVAL-')]
+     sg.In(key='-FRAMEINTERVAL-')],
+     [sg.Text("skip analyzed files", size=(15,1)),
+              sg.Combo(['true', 'false'], default_value="true", size=(6, 1), key="-SKIP_ANALYZED-")],
 ], size=(800, 300))
 
 frame2 = sg.Frame('', [
@@ -349,11 +363,11 @@ while True:
                 frame_interval = 3000
             else:
                 frame_interval = int(values["-FRAMEINTERVAL-"])
-
+            skip_analyzed = values["-SKIP_ANALYZED-"]
             shape = values["-shape"]    
             measure_scale = values["-measure_scale"]    
 
-            ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_interval)
+            ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_interval, skip_analyzed)
 window.close()
 
 

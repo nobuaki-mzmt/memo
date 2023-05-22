@@ -26,14 +26,17 @@ def ImageAnalysis(idir, odir, scale, cropping, shape, fwidth, v_len, offset):
         video = cv2.VideoCapture(v)
         width = video.get(cv2.CAP_PROP_FRAME_WIDTH)
         height = video.get(cv2.CAP_PROP_FRAME_HEIGHT)
-        count = video.get(cv2.CAP_PROP_FRAME_COUNT)
         fps = video.get(cv2.CAP_PROP_FPS)
-        if v_len < 0:
-            video_length = count
+
+        total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+        start_frame = int(video.get(cv2.CAP_PROP_FPS) * offset)
+        if v_len > 0:
+            end_frame = start_frame + int(v_len * video.get(cv2.CAP_PROP_FPS))
         else:
-            video_length = count * fps
+            end_frame = total_frames
+
         print(v)
-        print("width:{}, height:{}, count:{}, fps:{}".format(width, height, count, fps))
+        print("width:{}, height:{}, total_frames:{}, fps:{}".format(width, height, total_frames, fps))
 
         
         ## Cropping
@@ -146,19 +149,17 @@ def ImageAnalysis(idir, odir, scale, cropping, shape, fwidth, v_len, offset):
 
         ## Video writer
         video = cv2.VideoCapture(v)
-
         fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
         v2 = v.replace('.MP4', '_trim.mp4')
         if fwidth > 0:
             writer = cv2.VideoWriter(v2.replace(idir, odir), fourcc, fps, (fwidth, fwidth))
             video = cv2.VideoCapture(v)
-            for t in tqdm.tqdm(range(int(video_length))):
+            for _ in tqdm.tqdm(range(start_frame, end_frame)):
                 ret, frame = video.read()
-                if t > offset:
-                    frame_trim = frame.copy()
-                    frame_trim = frame_trim[y0:y1, x0:x1]
-                    frame_resize = cv2.resize(frame_trim, (fwidth, fwidth))
-                    writer.write(frame_resize)
+                if ret:
+                    frame_trim = frame[y0:y1, x0:x1]
+                    frame_trim = cv2.resize(frame_trim, (fwidth, fwidth))
+                    writer.write(frame_trim)
         else:
             writer = cv2.VideoWriter(v2.replace(idir, odir), fourcc, fps, (y1-y0, y1-y0))
             video = cv2.VideoCapture(v)
@@ -195,9 +196,9 @@ frame1 = sg.Frame('', [
      ],     
      [sg.Text("Frame width"),
      sg.In(key='-fwidth-')],
-     [sg.Text("Video length in second"),
+     [sg.Text("Video length (second)"),
      sg.In(key='-vlength-')],
-     [sg.Text("offset in frame"),
+     [sg.Text("offset (second)"),
      sg.In(key='-offset-')]
 ], size=(800, 300))
 
@@ -217,6 +218,8 @@ while True:
 
     if len(values["-INFOLDERNAME-"]) == 0:
             print("no input!")
+    elif len(values["-fwidth-"]) == 0:
+            print("specify frame width")
     else:
         if event == 'button_start':
             idir = values["-INFOLDERNAME-"]
@@ -232,10 +235,7 @@ while True:
             else:
                 scale = float(values["-scale-"])
 
-            if len(values["-fwidth-"]) == 0:
-                fwidth = -1
-            else:
-                fwidth = int(values["-fwidth-"])
+            fwidth = int(values["-fwidth-"])
 
             if len(values["-offset-"]) == 0:
                 offset = 0

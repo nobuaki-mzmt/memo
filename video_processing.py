@@ -16,29 +16,36 @@ import math
 # ---------------------------------------------------------------------------------------------
 # Main part of video analysis
 # ---------------------------------------------------------------------------------------------
-def ImageAnalysis(idir, odir, scale, cropping, shape, fwidth, v_len, offset):
+def ImageAnalysis(idir, odir, scale, cropping, shape, fwidth, v_len, offset, output_FPS):
 
-    path = glob.glob(idir + os.sep + "*.MP4")
+    path = glob.glob(idir + os.sep + "*.mp4")
     filenums = list(range((len(path))))
 
     for i in filenums:
         v = path[i]
         video = cv2.VideoCapture(v)
+        
         width = video.get(cv2.CAP_PROP_FRAME_WIDTH)
         height = video.get(cv2.CAP_PROP_FRAME_HEIGHT)
+
         fps = video.get(cv2.CAP_PROP_FPS)
+        if int(fps) == 29:
+            fps = 30
+        elif int(fps) == 59:
+            fps = 60
+        else:
+            return("FPS is not 29.97 or 59.94")
 
         total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
         start_frame = int(video.get(cv2.CAP_PROP_FPS) * offset)
         if v_len > 0:
-            end_frame = start_frame + int(v_len * video.get(cv2.CAP_PROP_FPS))
+            end_frame = start_frame + int(v_len * fps)
         else:
             end_frame = total_frames
 
         print(v)
-        print("width:{}, height:{}, total_frames:{}, fps:{}".format(width, height, total_frames, fps))
+        print("width:{}, height:{}, total_frames:{}, fps:{}".format(width, height, total_frames, video.get(cv2.CAP_PROP_FPS)))
 
-        
         ## Cropping
         x0, y0, x1, y1 = 0, 0, int(width), int(height)
         if cropping == "True":
@@ -121,10 +128,10 @@ def ImageAnalysis(idir, odir, scale, cropping, shape, fwidth, v_len, offset):
                     break
                 if k == 27:
                     break
+            cv2.destroyAllWindows()
             if k == 27:
                 break
 
-            cv2.destroyAllWindows()
 
             x0 = int(x0 / scale)
             x1 = int(x1 / scale)
@@ -150,24 +157,16 @@ def ImageAnalysis(idir, odir, scale, cropping, shape, fwidth, v_len, offset):
         ## Video writer
         video = cv2.VideoCapture(v)
         fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
-        v2 = v.replace('.MP4', '_trim.mp4')
-        if fwidth > 0:
-            writer = cv2.VideoWriter(v2.replace(idir, odir), fourcc, fps, (fwidth, fwidth))
-            video = cv2.VideoCapture(v)
-            for _ in tqdm.tqdm(range(start_frame, end_frame)):
-                ret, frame = video.read()
-                if ret:
+        v2 = v.replace('.mp4', '_trim.mp4')
+        writer = cv2.VideoWriter(v2.replace(idir, odir), fourcc, output_FPS, (fwidth, fwidth))
+        frame_interval = int(fps/output_FPS)
+        video.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+        for i in tqdm.tqdm(range(start_frame, end_frame)):
+            ret, frame = video.read()
+            if ret:
+                if i % frame_interval == 0:
                     frame_trim = frame[y0:y1, x0:x1]
                     frame_trim = cv2.resize(frame_trim, (fwidth, fwidth))
-                    writer.write(frame_trim)
-        else:
-            writer = cv2.VideoWriter(v2.replace(idir, odir), fourcc, fps, (y1-y0, y1-y0))
-            video = cv2.VideoCapture(v)
-            for t in tqdm.tqdm(range(int(video_length))):
-                ret, frame = video.read()
-                if t > offset:
-                    frame_trim = frame.copy()
-                    frame_trim = frame_trim[y0:y1, x0:x1]
                     writer.write(frame_trim)
         writer.release()
 
@@ -196,10 +195,12 @@ frame1 = sg.Frame('', [
      ],     
      [sg.Text("Frame width"),
      sg.In(key='-fwidth-')],
-     [sg.Text("Video length (second)"),
+     [sg.Text("Video length (sec)"),
      sg.In(key='-vlength-')],
-     [sg.Text("offset (second)"),
-     sg.In(key='-offset-')]
+     [sg.Text("offset (sec)"),
+     sg.In(key='-offset-')],
+     [sg.Text("output FPS (def = 30)"),
+     sg.In(key='-output_FPS-')]
 ], size=(800, 300))
 
 frame2 = sg.Frame('', [
@@ -215,41 +216,48 @@ while True:
     if event is None:
         print('exit')
         break
-
-    if len(values["-INFOLDERNAME-"]) == 0:
-            print("no input!")
-    elif len(values["-fwidth-"]) == 0:
-            print("specify frame width")
     else:
-        if event == 'button_start':
-            idir = values["-INFOLDERNAME-"]
-            if len(values["-OUTFOLDERNAME-"]) == 0:
-                odir = idir + "/cropped/"
-                if not os.path.exists(odir):
-                    os.makedirs(odir)
-            else:
-                odir = values["-OUTFOLDERNAME-"]
+    if event =="button_start":
+        if len(values["-INFOLDERNAME-"]) == 0:
+                print("no input!")
+        elif len(values["-fwidth-"]) == 0:
+                print("specify frame width")
+        else:
+            if event == 'button_start':
+                idir = values["-INFOLDERNAME-"]
+                if len(values["-OUTFOLDERNAME-"]) == 0:
+                    odir = idir + "/cropped/"
+                    if not os.path.exists(odir):
+                        os.makedirs(odir)
+                else:
+                    odir = values["-OUTFOLDERNAME-"]
 
-            if len(values["-scale-"]) == 0:
-                scale = 0.5
-            else:
-                scale = float(values["-scale-"])
+                if len(values["-scale-"]) == 0:
+                    scale = 0.5
+                else:
+                    scale = float(values["-scale-"])
 
-            fwidth = int(values["-fwidth-"])
+                fwidth = int(values["-fwidth-"])
 
-            if len(values["-offset-"]) == 0:
-                offset = 0
-            else:
-                offset = int(values["-offset-"])
+                if len(values["-offset-"]) == 0:
+                    offset = 0
+                else:
+                    offset = int(values["-offset-"])
 
-            if len(values["-vlength-"]) == 0:
-                vlength = -1
-            else:
-                vlength = int(values["-vlength-"])
+                if len(values["-vlength-"]) == 0:
+                    vlength = -1
+                else:
+                    vlength = int(values["-vlength-"])
 
-            shape = values["-shape"]    
-            cropping = values["-cropping"]    
+                if len(values['-output_FPS-']) == 0:
+                    output_FPS = 30
+                else:
+                    output_FPS = int(values['-output_FPS-'])
+                
+                shape = values["-shape"]    
+                cropping = values["-cropping"]    
 
-            ImageAnalysis(idir, odir, scale, cropping, shape, fwidth, vlength, offset)
+                message = ImageAnalysis(idir, odir, scale, cropping, shape, fwidth, vlength, offset, output_FPS)
+                sg.popup(message)            
 
 window.close()

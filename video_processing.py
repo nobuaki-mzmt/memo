@@ -217,47 +217,47 @@ while True:
         print('exit')
         break
     else:
-    if event =="button_start":
-        if len(values["-INFOLDERNAME-"]) == 0:
+        if event =="button_start":
+            if len(values["-INFOLDERNAME-"]) == 0:
                 print("no input!")
-        elif len(values["-fwidth-"]) == 0:
+            elif len(values["-fwidth-"]) == 0:
                 print("specify frame width")
-        else:
-            if event == 'button_start':
-                idir = values["-INFOLDERNAME-"]
-                if len(values["-OUTFOLDERNAME-"]) == 0:
-                    odir = idir + "/cropped/"
-                    if not os.path.exists(odir):
-                        os.makedirs(odir)
-                else:
-                    odir = values["-OUTFOLDERNAME-"]
+            else:
+                if event == 'button_start':
+                    idir = values["-INFOLDERNAME-"]
+                    if len(values["-OUTFOLDERNAME-"]) == 0:
+                        odir = idir + "/cropped/"
+                        if not os.path.exists(odir):
+                            os.makedirs(odir)
+                    else:
+                        odir = values["-OUTFOLDERNAME-"]
 
-                if len(values["-scale-"]) == 0:
-                    scale = 0.5
-                else:
-                    scale = float(values["-scale-"])
+                    if len(values["-scale-"]) == 0:
+                        scale = 0.5
+                    else:
+                        scale = float(values["-scale-"])
 
-                fwidth = int(values["-fwidth-"])
+                    fwidth = int(values["-fwidth-"])
 
-                if len(values["-offset-"]) == 0:
-                    offset = 0
-                else:
-                    offset = int(values["-offset-"])
+                    if len(values["-offset-"]) == 0:
+                        offset = 0
+                    else:
+                        offset = int(values["-offset-"])
 
-                if len(values["-vlength-"]) == 0:
-                    vlength = -1
-                else:
-                    vlength = int(values["-vlength-"])
+                    if len(values["-vlength-"]) == 0:
+                        vlength = -1
+                    else:
+                        vlength = int(values["-vlength-"])
 
-                if len(values['-output_FPS-']) == 0:
-                    output_FPS = 30
-                else:
-                    output_FPS = int(values['-output_FPS-'])
-                
-                shape = values["-shape"]    
-                cropping = values["-cropping"]    
+                    if len(values['-output_FPS-']) == 0:
+                        output_FPS = 30
+                    else:
+                        output_FPS = int(values['-output_FPS-'])
+                    
+                    shape = values["-shape"]    
+                    cropping = values["-cropping"]    
 
-                message = ImageAnalysis(idir, odir, scale, cropping, shape, fwidth, vlength, offset, output_FPS)
-                sg.popup(message)            
+                    message = ImageAnalysis(idir, odir, scale, cropping, shape, fwidth, vlength, offset, output_FPS)
+                    sg.popup(message)            
 
 window.close()

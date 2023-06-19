@@ -48,6 +48,7 @@ def ImageAnalysis(idir, odir, scale, cropping, shape, fwidth, v_len, offset, out
 
         ## Cropping
         x0, y0, x1, y1 = 0, 0, int(width), int(height)
+        drawing = True
         if cropping == "True":
             # select crop range
             video.set(cv2.CAP_PROP_POS_FRAMES, 0)
@@ -55,7 +56,6 @@ def ImageAnalysis(idir, odir, scale, cropping, shape, fwidth, v_len, offset, out
             img = frame.copy()
 
             img2 = cv2.resize(img, dsize=None, fx=scale, fy=scale)
-
             sx0, sy0 = 0,0
             if shape == "circle":
                 def trim_click(event, x, y, flags, param):

@@ -56,61 +56,31 @@ def ImageAnalysis(idir, odir, scale, cropping, shape, fwidth, v_len, offset, out
             img = frame.copy()
 
             img2 = cv2.resize(img, dsize=None, fx=scale, fy=scale)
-            sx0, sy0 = 0,0
-            if shape == "circle":
-                def trim_click(event, x, y, flags, param):
-                    nonlocal sx0, sy0, x0, y0, x1, y1, scale, drawing, end
-                    if event == cv2.EVENT_LBUTTONDOWN:
-                        drawing = True
-                        sx0, sy0 = x, y
-                    elif event == cv2.EVENT_MOUSEMOVE:
-                        if drawing:
-                            cv2.circle(img_copy, center=(int((x - sx0) / 2) + sx0, int((y - sy0) / 2) + sy0),
-                                       radius=int(math.sqrt((sx0 - x) ** 2 + (sy0 - y) ** 2) / 2),
-                                       color=(0, 0, 255), thickness=1)
-                    elif event == cv2.EVENT_LBUTTONUP:
-                        diameter = math.sqrt((sx0 - x) ** 2 + (sy0 - y) ** 2)
-                        cv2.circle(img_copy, center=(int((x - sx0) / 2) + sx0, int((y - sy0) / 2) + sy0),
-                                   radius=int(diameter / 2),
-                                   color=(0, 0, 255), thickness=1)
-                        x0 = ((x - sx0) / 2) + sx0 - (diameter / 2)
-                        y0 = ((y - sy0) / 2) + sy0 - (diameter / 2)
-                        x1 = ((x - sx0) / 2) + sx0 + (diameter / 2)
-                        y1 = ((y - sy0) / 2) + sy0 + (diameter / 2)
-                        drawing = False
-                    elif event == cv2.EVENT_RBUTTONDOWN:
-                        end = 1
-                    press('enter')
-            elif shape == "square":
-                def trim_click(event, x, y, flags, param):
-                    nonlocal sx0, sy0, x0, y0, x1, y1, scale, drawing, end
-                    if event == cv2.EVENT_LBUTTONDOWN:
-                        drawing = True
-                        sx0, sy0 = x, y
-                    elif event == cv2.EVENT_MOUSEMOVE:
-                        if drawing:
-                            if abs(x-sx0) > abs(y-sy0):
-                                cv2.rectangle(img_copy, (sx0, sy0), (sx0+y-sy0, y), (0, 0, 255), thickness = 1)
-                            else:
-                                cv2.rectangle(img_copy, (sx0, sy0), (x, sy0+x-sx0), (0, 0, 255), thickness = 1)
-                    elif event == cv2.EVENT_LBUTTONUP:
-                        if abs(x-sx0) > abs(y-sy0):
-                            sx1 = sx0+y-sy0
-                            sy1 = y
-                        else:
-                            sx1 = x
-                            sy1 = sy0+x-sx0
-                        cv2.rectangle(img_copy, (sx0, sy0), (sx1, sy1), (0, 0, 255), thickness = 1)
-                        drawing = False
-                    elif event == cv2.EVENT_RBUTTONDOWN:
-                        x0 = sx0
-                        y0 = sy0
-                        x1 = sx1
-                        y1 = sy1
-                        end = 1
-                    press('enter')
+            sx0, sy0 = 0, 0
 
-            
+            def trim_click(event, x, y, flags, param):
+                nonlocal sx0, sy0, x0, y0, x1, y1, scale, drawing, end
+                if event == cv2.EVENT_LBUTTONDOWN:
+                    drawing = True
+                    sx0, sy0 = x, y
+                elif event == cv2.EVENT_MOUSEMOVE:
+                    if drawing:
+                        cv2.circle(img_copy, center=(int((x - sx0) / 2) + sx0, int((y - sy0) / 2) + sy0),
+                                   radius=int(math.sqrt((sx0 - x) ** 2 + (sy0 - y) ** 2) / 2),
+                                   color=(0, 0, 255), thickness=1)
+                elif event == cv2.EVENT_LBUTTONUP:
+                    diameter = math.sqrt((sx0 - x) ** 2 + (sy0 - y) ** 2)
+                    cv2.circle(img_copy, center=(int((x - sx0) / 2) + sx0, int((y - sy0) / 2) + sy0),
+                               radius=int(diameter / 2),
+                               color=(0, 0, 255), thickness=1)
+                    x0 = ((x - sx0) / 2) + sx0 - (diameter / 2)
+                    y0 = ((y - sy0) / 2) + sy0 - (diameter / 2)
+                    x1 = ((x - sx0) / 2) + sx0 + (diameter / 2)
+                    y1 = ((y - sy0) / 2) + sy0 + (diameter / 2)
+                    drawing = False
+                elif event == cv2.EVENT_RBUTTONDOWN:
+                    end = 1
+                press('enter')                    
             img_copy = img2.copy()
             img_output = img2.copy
             end = 0
@@ -169,6 +139,7 @@ def ImageAnalysis(idir, odir, scale, cropping, shape, fwidth, v_len, offset, out
                     frame_trim = cv2.resize(frame_trim, (fwidth, fwidth))
                     writer.write(frame_trim)
         writer.release()
+    return("Done")
 
 
 # ---------------------------------------------------------------------------------------------
@@ -188,7 +159,7 @@ frame1 = sg.Frame('', [
      [sg.Text("Scale (default = 0.5)"),
      sg.In(key='-scale-')],
      [sg.Text("crop select shape"),
-     sg.Combo(['circle', 'square'], default_value="circle", size=(4, 1), key="-shape")
+     sg.Combo(['circle'], default_value="circle", size=(4, 1), key="-shape")
      ],
      [sg.Text("Crop"),
      sg.Combo(['True', 'False'], default_value="True", size=(4, 1), key="-cropping")

@@ -51,7 +51,7 @@ def ImageAnalysis(idir, odir, scale, cropping, shape, fwidth, v_len, offset, out
         drawing = True
         if cropping == "True":
             # select crop range
-            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            video.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
             ret, frame = video.read()
             img = frame.copy()
 

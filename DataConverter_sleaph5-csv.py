@@ -38,7 +38,7 @@ def fill_missing(Y, kind="linear"):
         Y = Y.reshape(initial_shape)
         return Y
 
-def convertH5CSV(in_dir, out_dir):
+def convertH5CSV(in_dir, out_dir, ind_name):
     coord_name = ["x", "y"]
     files = glob.glob(in_dir + "/*.h5")
 
@@ -53,22 +53,18 @@ def convertH5CSV(in_dir, out_dir):
         locations = fill_missing(locations)
         print("number of individuals: " + str(locations.shape[3]))
 
-        ind_name = ['f1', 'm1', 'm2']
+        
         for i_ind in range(locations.shape[3]):
             label_name = []
             coordinates = []
-            
-            # antennatipr, antennabaser, antennatipl, antennabasel, headtip, pronotumfront, pronotumend, abdomentip
-            # head, center, abdtip
-            #for i_body in [0,1,2]: 
             for i_body in range(locations.shape[1]): 
-                if re.search(r'(head|abd|prono)', node_names[i_body]):
-                    for i_coord in range(locations.shape[2]):
-                        label = node_names[i_body] + "_" + coord_name[i_coord]
-                        loc_ndar = locations[:, i_body, i_coord, i_ind]
-                        loc_list = loc_ndar.tolist()
-                        coordinates.append(loc_list)
-                        label_name.append(label)
+            #    if re.search(r'(head|abd|prono)', node_names[i_body]):
+                for i_coord in range(locations.shape[2]):
+                    label = node_names[i_body] + "_" + coord_name[i_coord]
+                    loc_ndar = locations[:, i_body, i_coord, i_ind]
+                    loc_list = loc_ndar.tolist()
+                    coordinates.append(loc_list)
+                    label_name.append(label)
 
             df = pd.DataFrame(coordinates)
             df = df.T
@@ -88,8 +84,12 @@ frame1 = sg.Frame('', [
      sg.InputText('Output folder', key='-INPUTTEXT-', enable_events=True),
      sg.FolderBrowse(button_text='select', size=(8, 1), key="-OUTFOLDERNAME-"),
      sg.Text("*generated if not specified")
+     ],
+    [sg.Text("Assing individual name"),
+     sg.InputText('f1, m1', key='-INDNAME-', enable_events=True),
+     sg.Text("*default: f1, m1")
      ]
-], size=(650, 80))
+], size=(650, 120))
 
 frame2 = sg.Frame('', [
     [sg.Submit(button_text='Start', size=(10, 3), key='button_start')]], 
@@ -120,7 +120,14 @@ while True:
                     else:
                         odir = values["-OUTFOLDERNAME-"]
 
-                    message = convertH5CSV(idir, odir)
+                    if len(values["-INDNAME-"]) == 0:
+                        ind_name = ['f1', 'm1']
+                    else:
+                        s = values["-INDNAME-"]
+                        l = [x.strip() for x in s.split(',')]
+                        ind_name = [str(s) for s in l]
+
+                    message = convertH5CSV(idir, odir, ind_name)
                     sg.popup(message)
 window.close()
 

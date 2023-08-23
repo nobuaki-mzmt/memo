@@ -66,3 +66,7 @@ foreach ($file in $files) {
         Write-Host "Skipped file: $fileName"
     }
 }
+
+# Access network drive
+New-PSDrive -Name Z -PSProvider FileSystem -Root '\\Mabo-NAS\MIzumotoPhoto\temporary\Nobu_temporal\Internal storage\DCIM\Camera' -Persist -Credential RemoteUser
+Remove-Item -Path *copy* -Force

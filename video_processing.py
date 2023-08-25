@@ -29,9 +29,10 @@ def ImageAnalysis(idir, odir, scale, cropping, shape, fwidth, v_len, offset, out
         height = video.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
         fps = video.get(cv2.CAP_PROP_FPS)
-        if int(fps) == 29:
+        fps = int(fps)
+        if (fps == 29) or (fps == 30):
             fps = 30
-        elif int(fps) == 59:
+        elif (fps == 59) or (fps == 60):
             fps = 60
         else:
             return("FPS is not 29.97 or 59.94")

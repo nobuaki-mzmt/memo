@@ -69,7 +69,7 @@ def convertH5CSV(in_dir, out_dir, ind_name):
             df = pd.DataFrame(coordinates)
             df = df.T
             df = df.set_axis(label_name, axis='columns')
-            out_name = out_dir + f_base_name.replace(".h5", "_" + ind_name[i_ind] + ".csv")
+            out_name = out_dir + os.sep + f_base_name.replace(".h5", "_" + ind_name[i_ind] + ".csv")
             df.to_csv(out_name)
     return("Done")
 

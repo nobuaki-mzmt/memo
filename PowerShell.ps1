@@ -19,6 +19,30 @@ Get-ChildItem -Filter *.MP4 -Recurse | Rename-Item -NewName { $_.Name -replace '
 
 Get-ChildItem -Filter *.h5 | Rename-Item -NewName { $_.Name -replace '.*\.G', 'G' }
 
+#### Renaming other techniques
+# Get the current directory
+$directory = $PWD.Path
+$files = Get-ChildItem -Path $directory -Filter "*.mp4"
+# Loop through each file
+foreach ($file in $files) {
+    # Extracting the desired part of the filename using regex
+    if ($file.Name -match '(p\d+-\d+).*\(1903.*\.wmv\)') {
+        $oldFileName = $file.Name
+        $newFileName = $matches[1] + ".mp4"
+        
+        # Construct the full path for the new filename
+        $newFullPath = Join-Path -Path $directory -ChildPath $newFileName
+
+        # Print the old and new filenames
+        Write-Host "Old filename: $oldFileName"
+        Write-Host "New filename: $newFileName"
+        
+        # Rename the file
+        Rename-Item -Path $file.FullName -NewName $newFileName -Force
+    }
+}
+
+
 # 2. complicated
 
 $oldNames = Get-Content "H:\Ret_Comp_Tandem\R-ama\old.txt"
@@ -72,18 +96,28 @@ New-PSDrive -Name Z -PSProvider FileSystem -Root '\\Mabo-NAS\MIzumotoPhoto\tempo
 Remove-Item -Path *copy* -Force
 
 #------- fill with 0, e.g., CF_1.csv -> CF_01.csv -------#
-$directory = "C:\Path\To\Your\Files"
-$files = Get-ChildItem -Path $directory -Filter "*.csv"
+$files = Get-ChildItem
+# Loop through each file
 foreach ($file in $files) {
-    # Extract the number from the filename
-    $number = [regex]::Match($file.Name, '\d+').Value
+    # Extract the filename and extension
+    $filename = $file.BaseName
+    $extension = $file.extension
+    # Check if the filename contains a number
+    if ($filename -match "(\d+)") {
+        # Extract the numeric part
+        $number = [int]$matches[1]
 
-    # Pad the number with a leading zero if necessary
-    $paddedNumber = $number.PadLeft(2, '0')
+        # If the number is less than 10, pad it with a leading zero
+        if ($number -lt 10) {
+            $paddedNumber = "0$number"
+            # Create the new filename with the padded number
+            $newFilename = $filename -replace $number, $paddedNumber
 
-    # Construct the new filename with the padded number
-    $newFileName = $file.Name -replace $number, $paddedNumber
+            # Construct the new full filename
+            $newFullFilename = $file.DirectoryName + '\\' + $newFilename + $extension
 
-    # Rename the file with the new filename
-    Rename-Item -Path $file.FullName -NewName $newFileName
+            # Rename the file
+            Rename-Item $file.FullName  $newFullFilename 
+        }
+    }
 }

@@ -70,3 +70,20 @@ foreach ($file in $files) {
 # Access network drive
 New-PSDrive -Name Z -PSProvider FileSystem -Root '\\Mabo-NAS\MIzumotoPhoto\temporary\Nobu_temporal\Internal storage\DCIM\Camera' -Persist -Credential RemoteUser
 Remove-Item -Path *copy* -Force
+
+#------- fill with 0, e.g., CF_1.csv -> CF_01.csv -------#
+$directory = "C:\Path\To\Your\Files"
+$files = Get-ChildItem -Path $directory -Filter "*.csv"
+foreach ($file in $files) {
+    # Extract the number from the filename
+    $number = [regex]::Match($file.Name, '\d+').Value
+
+    # Pad the number with a leading zero if necessary
+    $paddedNumber = $number.PadLeft(2, '0')
+
+    # Construct the new filename with the padded number
+    $newFileName = $file.Name -replace $number, $paddedNumber
+
+    # Rename the file with the new filename
+    Rename-Item -Path $file.FullName -NewName $newFileName
+}

@@ -38,7 +38,7 @@ for /r %f in (*.wmv) do ffmpeg -i "%~f" -c:v h264_nvenc "%~nf.mp4"
 :: When running a for loop directly in cmd, need to use % instead of %% as the loop variable.
 :: This is because the %% symbol is used to escape variables in batch files, but is not necessary when running a loop directly in cmd.
 
-
+for %i in (*.mp4) do ffmpeg -i "%i" -c:v h264_nvenc -b:v 1M -crf 23 -c:a copy "%~ni_UMA.mp4"
 
 :: ---- speed change ----
 ffmpeg -i input.mp4 -vf setpts=PTS/3.0 -af atempo=2.0 outputx2.mp4

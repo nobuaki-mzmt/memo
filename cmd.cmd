@@ -26,14 +26,29 @@ ffmpeg -i input.mp4 -c:v libx264 -s 1920x1080 -b:v 1000k output.mp4
 :: 2. 	-b:v 
 :: 		bit rate (specify if you want to reduce the file size)
 
+:: remove audio: -an
+ffmpeg -ss 00:08:12 -i A008C240_230606_DJ0B.mp4 -t 00:06:49 -an -c:v libx264 -crf 23 -preset fast -c:a copy observation.mp4
+ffmpeg -ss 00:10:00 -i MAH04936.MP4 -t 00:10:00 -an -c:v libx264 -filter:v "crop=1280:400:00:00" -c:a copy Gnathami-01-begin.mp4
+ffmpeg -ss 00:20:00 -i MAH04936.MP4 -t 00:10:00 -an -c:v libx264 -filter:v "crop=1280:400:00:00" -c:a copy Gnathami-01-max.mp4
+
 :: ---- trimming ----
-ffmpeg -ss 20 -i input.mp4 -t3600 output.mp4
+ffmpeg -ss 20 -i input.mp4 -t 3600 output.mp4
+
+ffmpeg -ss 00:08:00 -i MAH04936.MP4 -an -t 600 initial.mp4
+ffmpeg -ss 02:40:00 -i MAH04936.MP4 -an -t 600 middle.mp4
+ffmpeg -ss 00:09:30 -i Rspe_55_FM_455_3_trim.mp4 -an -t 60 dlc.mp4
+ffmpeg -ss 00:00:30 -i three.mp4 -an -t 120 three_short.mp4
+ffmpeg -ss 00:00:03 -i video1644847208.mp4 -an -t 7 show.mp4
+ffmpeg -ss 00:02:00 -i Rspe_55_F_455_1_trim.mp4 -an -t 60 dlc_solo.mp4
 
 :: ---- multiple files ----
 :: Mac
 for f in *.MP4; do ffmpeg -ss 20 -i "$f" -t 3600 -c:v h264_nvenc -b:v 1000k -s 1920x1080 %%i-small.mp4; done
 :: Windows
 for /r %f in (*.mp4) do ffmpeg -ss 20 -i "$f" -t 3600 -c:v h264_nvenc -b:v 1000k -s 1920x1080 %%i-small.mp4
+
+for /r %f in (*.mp4) do ffmpeg -i "%~f" -c:v h264 -b:v 1000k -s 120x100 "%~nf-2.mp4"
+
 for /r %f in (*.wmv) do ffmpeg -i "%~f" -c:v h264_nvenc "%~nf.mp4"
 :: When running a for loop directly in cmd, need to use % instead of %% as the loop variable.
 :: This is because the %% symbol is used to escape variables in batch files, but is not necessary when running a loop directly in cmd.

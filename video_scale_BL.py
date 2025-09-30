@@ -90,8 +90,10 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
             frame_copy = frame.copy()
             cv2.putText(frame_copy, 'file: ' + name + '  frame: ' + str(frame_id),
                         (10, 50), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2, cv2.LINE_AA)
-            cv2.putText(frame_copy, 'Use this frame? R:yes, L:No',
-                        (10, 100), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2, cv2.LINE_AA)
+            cv2.putText(frame_copy, 'Use this frame? R:yes, L:No (+ frame_interval)',
+                        (20, 100), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2, cv2.LINE_AA)
+            cv2.putText(frame_copy, 'A:-1 frame, S: +1 frame',
+                        (30, 150), cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2, cv2.LINE_AA)
             cv2.imshow('window', frame_copy)
             cv2.setMouseCallback('window', frame_check)
             k = cv2.waitKey(0)
@@ -100,9 +102,14 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
                 break
             elif k == ord("l"):
                 frame_id   = frame_id + frame_interval
-                if frame_id > count:
+                if frame_id >= count:
                     print("End of frames. Maybe reduce frame_interval to sample more frames.")
                     frame_id = 0
+            elif k == ord("a"):
+                frame_id   = frame_id - 1
+            elif k == ord("s"):
+                frame_id   = frame_id + 1
+
             elif k == 27:
                 break
 
@@ -233,9 +240,9 @@ def ImageAnalysis(idir, odir, img_scale, measure_scale, shape, num_ind, frame_in
                     mouse_xy[1] = max(mouse_xy[1], img_shape[1] / 4)
                     mouse_xy[0] = min(mouse_xy[0], img_shape[0] * 3 / 4)
                     mouse_xy[1] = min(mouse_xy[1], img_shape[1] * 3 / 4)
-                    img_zoom = cv2.resize(img_z, dsize=(img_shape * 2))
-                    img_zoom = img_zoom[int(mouse_xy[1] * 2 - img_shape[1] / 2):int(mouse_xy[1] * 2 + img_shape[1] / 2),
-                               int(mouse_xy[0] * 2 - img_shape[0] / 2):int(mouse_xy[0] * 2 + img_shape[0] / 2)]
+                    img_zoom = img_z[int(mouse_xy[1] - img_shape[1] / 4):int(mouse_xy[1] + img_shape[1] / 4),
+                               int(mouse_xy[0] - img_shape[0] / 4):int(mouse_xy[0] + img_shape[0] / 4)]
+                    img_zoom = cv2.resize(img_zoom, dsize=(img_shape * 2))
                     zoom_xy = mouse_xy * 2 - img_shape / 2
                     zoom_xy = zoom_xy.astype(int)
                     return img_zoom, zoom_xy, zoom*2
